@@ -27,5 +27,45 @@ missionen = [
     {"land": "Rheinland-Pfalz", "stadt": "Mainz", "coords": [49.9929, 8.2473], "optionen": ["Mainz", "Koblenz", "Trier"]},
     {"land": "Saarland", "stadt": "Saarbrücken", "coords": [49.2333, 7.0000], "optionen": ["Saarbrücken", "Homburg", "Saarlouis"]},
     {"land": "Sachsen", "stadt": "Dresden", "coords": [51.0504, 13.7373], "optionen": ["Dresden", "Leipzig", "Chemnitz"]},
-    {"land": "Sachsen-Anhalt", "stadt": "Magdeburg", "coords": [52.1333, 11.6167], "optionen": ["Magde
-                                                                                                
+    {"land": "Sachsen-Anhalt", "stadt": "Magdeburg", "coords": [52.1333, 11.6167], "optionen": ["Magdeburg", "Halle", "Dessau"]},
+    {"land": "Schleswig-Holstein", "stadt": "Kiel", "coords": [54.3233, 10.1228], "optionen": ["Kiel", "Hamburg", "Schwerin"]},
+    {"land": "Thüringen", "stadt": "Erfurt", "coords": [50.9781, 11.0292], "optionen": ["Erfurt", "Jena", "Weimar"]}
+]
+
+st.sidebar.markdown(f"### 🎖️ AGENT: JAYDEN\n### 🌟 XP: {st.session_state.xp}")
+
+if st.session_state.runde < len(missionen):
+    aktuelle_mission = missionen[st.session_state.runde]
+    st.subheader(f"📍 Sektor {st.session_state.runde + 1} scannen")
+    
+    # Wir nutzen eine Karte, die immer funktioniert (ohne externes JSON-Laden)
+    m = folium.Map(location=[51.1657, 10.4515], zoom_start=6, tiles="OpenStreetMap")
+    
+    # Ziel-Marker
+    folium.Marker(
+        aktuelle_mission["coords"], 
+        icon=folium.Icon(color="red", icon="crosshair", prefix="fa")
+    ).add_to(m)
+    
+    st_folium(m, width=700, height=450)
+
+    st.info("Welche Hauptstadt gehört zu diesem Sektor?")
+    wahl = st.radio("Wähle deine Antwort:", aktuelle_mission["optionen"])
+
+    if st.button("📡 Daten an Zentrale senden"):
+        if wahl == aktuelle_mission["stadt"]:
+            st.balloons()
+            st.success(f"✅ Korrekt! Sektor {aktuelle_mission['land']} gesichert.")
+            st.session_state.xp += 50
+            st.session_state.runde += 1
+            st.rerun()
+        else:
+            st.error("❌ Fehler! Das ist nicht die richtige Hauptstadt.")
+else:
+    st.header("🏆 MISSION ERFÜLLT!")
+    st.write(f"Agent Jayden hat alle 16 Sektoren gesichert. Gesamt-XP: {st.session_state.xp}")
+    if st.button("Mission neu starten 🔄"):
+        st.session_state.runde = 0
+        st.session_state.xp = 0
+        st.rerun()
+        
