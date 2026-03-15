@@ -1,12 +1,13 @@
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
+import random
 
 # Mission-Zentrale Setup
 st.set_page_config(page_title="Agent Jayden: Bundesländer-Check", layout="centered")
-st.title("🕵️ MISSION: STUMME KARTE")
+st.title("🕵️ MISSION: DEUTSCHLAND-SCANNER")
 
-# Speicher für Fortschritt
+# Speicher für Fortschritt und gemischte Optionen
 if 'runde' not in st.session_state:
     st.session_state.runde = 0
 if 'xp' not in st.session_state:
@@ -38,38 +39,42 @@ if st.session_state.runde < len(missionen):
     aktuelle_mission = missionen[st.session_state.runde]
     st.subheader(f"📍 Sektor {st.session_state.runde + 1} scannen")
     
-    # "CartoDB Positron No Labels" ist fast komplett weiß mit grauen Linien
+    # Karte ohne Beschriftungen für echtes Training
     m = folium.Map(
         location=[51.1657, 10.4515], 
         zoom_start=6, 
         tiles="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
-        attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        attr='&copy; CARTO'
     )
     
-    # Ziel-Marker
-    folium.Marker(
-        aktuelle_mission["coords"], 
-        icon=folium.Icon(color="red", icon="crosshair", prefix="fa")
-    ).add_to(m)
-    
+    folium.Marker(aktuelle_mission["coords"], icon=folium.Icon(color="red", icon="crosshair", prefix="fa")).add_to(m)
     st_folium(m, width=700, height=450)
 
+    # Optionen mischen (pro Runde einmalig)
+    if 'aktuelle_optionen' not in st.session_state or st.session_state.last_runde != st.session_state.runde:
+        opts = aktuelle_mission["optionen"].copy()
+        random.shuffle(opts)
+        st.session_state.aktuelle_optionen = opts
+        st.session_state.last_runde = st.session_state.runde
+
     st.info("Welche Hauptstadt gehört zu diesem Sektor?")
-    wahl = st.radio("Wähle deine Antwort:", aktuelle_mission["optionen"])
+    wahl = st.radio("Wähle deine Antwort:", st.session_state.aktuelle_optionen, index=None)
 
     if st.button("📡 Daten an Zentrale senden"):
-        if wahl == aktuelle_mission["stadt"]:
+        if wahl is None:
+            st.warning("⚠️ Agent, wähle zuerst ein Ziel aus!")
+        elif wahl == aktuelle_mission["stadt"]:
             st.balloons()
-            st.success(f"✅ Korrekt! Sektor {aktuelle_mission['land']} gesichert.")
+            st.success(f"🎯 Korrekt! Sektor {aktuelle_mission['land']} gesichert.")
             st.session_state.xp += 50
             st.session_state.runde += 1
             st.rerun()
         else:
-            st.error("❌ Fehler! Das ist nicht die richtige Hauptstadt.")
+            st.error("❌ Falsche Koordinaten! Versuch es nochmal.")
 else:
     st.header("🏆 MISSION ERFÜLLT!")
     st.write(f"Agent Jayden hat alle 16 Sektoren gesichert. Gesamt-XP: {st.session_state.xp}")
-    if st.button("Mission neu starten 🔄"):
+    if st.button("Neue Mission starten 🔄"):
         st.session_state.runde = 0
         st.session_state.xp = 0
         st.rerun()
