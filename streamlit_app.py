@@ -4,7 +4,7 @@ from streamlit_folium import st_folium
 
 # Mission-Zentrale Setup
 st.set_page_config(page_title="Agent Jayden: Bundesländer-Check", layout="centered")
-st.title("🕵️ MISSION: DEUTSCHLAND-SCANNER")
+st.title("🕵️ MISSION: STUMME KARTE")
 
 # Speicher für Fortschritt
 if 'runde' not in st.session_state:
@@ -38,8 +38,13 @@ if st.session_state.runde < len(missionen):
     aktuelle_mission = missionen[st.session_state.runde]
     st.subheader(f"📍 Sektor {st.session_state.runde + 1} scannen")
     
-    # Wir nutzen eine Karte, die immer funktioniert (ohne externes JSON-Laden)
-    m = folium.Map(location=[51.1657, 10.4515], zoom_start=6, tiles="OpenStreetMap")
+    # "CartoDB Positron No Labels" ist fast komplett weiß mit grauen Linien
+    m = folium.Map(
+        location=[51.1657, 10.4515], 
+        zoom_start=6, 
+        tiles="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+        attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    )
     
     # Ziel-Marker
     folium.Marker(
