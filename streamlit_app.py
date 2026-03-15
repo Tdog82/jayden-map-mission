@@ -2,42 +2,64 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 
-# Mission-Zentrale für Jayden
-st.set_page_config(page_title="Agent Jayden: Map-Mission", layout="centered")
-st.title("🕵️ MISSION: BUNDESLAND-DETEKTIV")
+# Mission-Zentrale Setup
+st.set_page_config(page_title="Agent Jayden: Bundesländer-Check", layout="centered")
+st.title("🕵️ MISSION: DEUTSCHLAND-SCANNER")
 
-# Punkte-System (XP)
+# Speicher für Fortschritt (Runde) und XP
+if 'runde' not in st.session_state:
+    st.session_state.runde = 0
 if 'xp' not in st.session_state:
     st.session_state.xp = 0
 
-# Status-Anzeige an der Seite
+# Datenbank der Missionen (Bundesländer & Hauptstädte)
+# Hier können wir später alle 16 Länder eintragen
+missionen = [
+    {"land": "Bayern", "stadt": "München", "coords": [48.1351, 11.5820], "optionen": ["Stuttgart", "München", "Nürnberg"]},
+    {"land": "Berlin", "stadt": "Berlin", "coords": [52.5200, 13.4050], "optionen": ["Potsdam", "Berlin", "Magdeburg"]},
+    {"land": "Schleswig-Holstein", "stadt": "Kiel", "coords": [54.3233, 10.1228], "optionen": ["Kiel", "Hamburg", "Schwerin"]},
+    {"land": "Nordrhein-Westfalen", "stadt": "Düsseldorf", "coords": [51.2277, 6.7735], "optionen": ["Köln", "Dortmund", "Düsseldorf"]}
+]
+
+# Status-Anzeige in der Seitenleiste
 st.sidebar.markdown(f"### 🎖️ AGENT: JAYDEN\n### 🌟 XP: {st.session_state.xp}")
+st.sidebar.progress(st.session_state.runde / len(missionen))
 
-# Die interaktive Karte vorbereiten
-st.subheader("📍 Zielsektor scannen")
-m = folium.Map(location=[51.1657, 10.4515], zoom_start=6)
+# Prüfen, ob noch Missionen offen sind
+if st.session_state.runde < len(missionen):
+    aktuelle_mission = missionen[st.session_state.runde]
+    
+    st.subheader(f"📍 Sektor {st.session_state.runde + 1} scannen")
+    
+    # Die interaktive Karte mit Marker
+    m = folium.Map(location=[51.1657, 10.4515], zoom_start=6)
+    folium.Marker(
+        aktuelle_mission["coords"], 
+        popup="Zielsektor",
+        icon=folium.Icon(color="red", icon="search")
+    ).add_to(m)
+    
+    st_folium(m, width=700, height=400)
 
-# Wir setzen einen Marker für die erste Mission: Bayern
-folium.Marker(
-    [48.1351, 11.5820], 
-    popup="Welches Bundesland und welche Hauptstadt?", 
-    tooltip="Hier klicken für Info"
-).add_to(m)
+    # Quiz-Bereich
+    st.info(f"Identifiziere die Hauptstadt für diesen Sektor!")
+    wahl = st.radio("Welche Stadt ist die richtige Landeshauptstadt?", aktuelle_mission["optionen"])
 
-# Karte in der App anzeigen
-st_folium(m, width=700, height=450)
-
-# Abfrage-Bereich für Jayden
-st.info("Agent Jayden, erkenne den markierten Sektor im Süden!")
-
-land = st.selectbox("Wähle das Bundesland:", ["...", "Bayern", "Baden-Württemberg", "Hessen"])
-stadt = st.text_input("Wie heißt die Landeshauptstadt?")
-
-if st.button("Sektor-Daten übermitteln"):
-    if land == "Bayern" and stadt.strip().lower() == "münchen":
-        st.balloons()
-        st.success("🎯 Volltreffer! Sektor gesichert. +50 XP")
-        st.session_state.xp += 50
-    else:
-        st.error("❌ Falsche Daten! Überprüfe die Map erneut.")
-      
+    if st.button("Antwort an Zentrale senden 📡"):
+        if wahl == aktuelle_mission["stadt"]:
+            st.success("🎯 Volltreffer! +50 XP")
+            st.session_state.xp += 50
+            st.session_state.runde += 1
+            st.rerun()
+        else:
+            st.error("❌ Alarm! Falsche Koordinaten. Versuche es noch einmal!")
+else:
+    # Finale Belohnung
+    st.balloons()
+    st.header("🏆 MISSION ERFÜLLT!")
+    st.write(f"Agent Jayden hat alle Sektoren gesichert und {st.session_state.xp} XP gesammelt.")
+    if st.button("Neue Mission starten 🔄"):
+        st.session_state.runde = 0
+        st.session_state.xp = 0
+        st.rerun()
+        
